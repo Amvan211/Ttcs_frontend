@@ -10,6 +10,7 @@ export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isLoggedIn, user, logout } = useAuth();
+  console.log("Dữ liệu User hiện tại:", user);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -98,7 +99,7 @@ export default function Header() {
                   <span className="text-xs font-bold text-primary font-body">{user?.name || 'User'}</span>
                   <div className="w-8 h-8 rounded-full overflow-hidden border border-primary/10">
                     <img
-                      src={user?.avatar || "https://lh3.googleusercontent.com/aida-public/AB6AXuAnf0B1H_9R47-R-pD7fW3a-P6-D6O-W7-Y-E-T-N-B-H-C-I-D-M-F-G-H-J-K-L-M-N-O-P"}
+                      src={user?.avatar || "https://cdn2.tuoitre.vn/zoom/700_390/471584752817336320/2026/4/14/rectanglelargetype2ef9e108e607f9d112d29071d2b746c6f-1776140413918800777816-0-0-667-1273-crop-1776140442101536784573.jpg"}
                       alt="User Avatar"
                       className="w-full h-full object-cover"
                     />

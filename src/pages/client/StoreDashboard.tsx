@@ -95,6 +95,17 @@ export default function StoreDashboard() {
     setIsModalOpen(true);
   };
 
+  const handleDeleteBook = async (bookId: number | string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa sách này không?')) return;
+    try {
+      await partnerService.deleteBook(Number(bookId));
+      alert('Xóa sách thành công');
+      setBooks(prevBooks => prevBooks.filter(b => Number(b.id) !== Number(bookId)));
+    } catch (err) {
+      setSaveErr(err instanceof Error ? err.message : 'Không xóa được sách');
+    }
+  };  
+
   const handleSaveBook = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaveErr(null);
@@ -312,8 +323,8 @@ export default function StoreDashboard() {
                       </button>
                       <button
                         type="button"
-                        disabled
-                        className="p-2 rounded-full text-outline opacity-40 cursor-not-allowed"
+                        onClick={() => handleDeleteBook(book.id)}
+                        className="p-2 rounded-full text-on-surface-variant hover:bg-red-50 hover:text-red-600 transition-all cursor-pointer"
                         title="Xóa sách: liên hệ quản trị — API chưa có"
                       >
                         <Trash2 className="w-4 h-4" />

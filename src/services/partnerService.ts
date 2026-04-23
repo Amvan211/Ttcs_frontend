@@ -15,6 +15,8 @@ export const partnerService = {
 
   addBook: (payload: PartnerBookRequest) => apiClient.post<ApiBook>('/api/partner/books', payload),
 
+  deleteBook: (bookId: number) => apiClient.delete<void>(`/api/partner/books/${bookId}`),
+  
   updateOrderStatus: (orderId: number, status: string) =>
     apiClient.put<ApiOrder>(`/api/partner/orders/${orderId}/status`, { status }),
 };
