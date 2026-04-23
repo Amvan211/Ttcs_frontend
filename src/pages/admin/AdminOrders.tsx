@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download, Filter, MoreVertical, CheckCircle2, Clock, XCircle, Truck } from 'lucide-react';
+import { Download, Filter, MoreVertical, CheckCircle2, Clock, XCircle, Truck, Edit3, Trash2 } from 'lucide-react';
 
 import { orderService } from '../../services';
 import type { AdminOrderRow } from '../../types/admin';
@@ -28,6 +28,49 @@ export default function AdminOrders() {
 
   const pendingCount = orders.filter((o) => o.status === 'processing').length;
   const monthTotalLabel = orders.length ? `${orders.length} đơn` : '—';
+  const toOrderId = (id: string) => Number(String(id).replace(/\D/g, ''));
+
+  const handleCreate = () => {
+    const run = async () => {
+      const userIdRaw = window.prompt('Nhập userId');
+      const bookIdRaw = window.prompt('Nhập bookId');
+      const quantityRaw = window.prompt('Nhập số lượng', '1');
+      const userId = Number(userIdRaw);
+      const bookId = Number(bookIdRaw);
+      const quantity = Number(quantityRaw);
+      if (!Number.isFinite(userId) || !Number.isFinite(bookId) || !Number.isFinite(quantity)) return;
+      await orderService.createAdminOrder({
+        userId,
+        status: 'processing',
+        items: [{ bookId, quantity }],
+      });
+      const list = await orderService.getAdminOrders();
+      setOrders(list);
+    };
+    run().catch((e) => setErr(e instanceof Error ? e.message : 'Tạo đơn thất bại'));
+  };
+
+  const handleEdit = (id: string) => {
+    const run = async () => {
+      const current = orders.find((o) => o.id === id);
+      if (!current) return;
+      const status = window.prompt('Cập nhật trạng thái', current.status);
+      if (!status?.trim()) return;
+      await orderService.updateAdminOrder(toOrderId(id), { status: status.trim() });
+      const list = await orderService.getAdminOrders();
+      setOrders(list);
+    };
+    run().catch((e) => setErr(e instanceof Error ? e.message : 'Cập nhật đơn thất bại'));
+  };
+
+  const handleDelete = (id: string) => {
+    const run = async () => {
+      if (!window.confirm('Xóa đơn hàng này?')) return;
+      await orderService.deleteAdminOrder(toOrderId(id));
+      setOrders((prev) => prev.filter((o) => o.id !== id));
+    };
+    run().catch((e) => setErr(e instanceof Error ? e.message : 'Xóa đơn thất bại'));
+  };
 
   return (
     <div className="space-y-6">
@@ -48,6 +91,7 @@ export default function AdminOrders() {
           </button>
           <button
             type="button"
+            onClick={handleCreate}
             className="flex items-center gap-2 px-4 py-2 bg-[#1e1b4b] text-white rounded-lg text-sm font-semibold hover:bg-[#312e81] transition-colors shadow-md"
           >
             Tạo đơn mới
@@ -166,7 +210,19 @@ export default function AdminOrders() {
                         {order.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-xs text-slate-500 italic max-w-[200px] truncate">{order.note}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-slate-500 italic max-w-[140px] truncate">{order.note}</span>
+                        <div className="flex items-center gap-1">
+                          <button type="button" onClick={() => handleEdit(order.id)} className="p-1.5 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors text-slate-400">
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button type="button" onClick={() => handleDelete(order.id)} className="p-1.5 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors text-slate-400">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}

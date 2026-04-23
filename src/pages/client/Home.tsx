@@ -1,6 +1,34 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { categoryService } from '../../services';
+import type { ApiCategory } from '../../types/api';
+
+const CATEGORY_IMAGES = [
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuBzVeCeoneS95w1y7jHbGGEJCzbqWCcS1qzBhqpYBn5idFxMfqzA35ozgnqdl6nXa7hwZ-fz_ixsq63A3eC_rFx5wrhdI80nDOWfp_BCabRdpYq4DTW8L8u3dkQXcu3MRcnW9AnrSJlDcoHyw72q0MkIArDSRGOY8HaBR8oMzZhFO2jhJhG9Sgveu0QS9PTIslhHeCunPxXR7YIx9us6pf2hNfRUDc-6QgfgYMIg-IaAa9sGhtlGEoeEzE7Clyr9OsdBP1omoyN7bk',
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuBbk71PJZgMedhD63Ml11OfyIkYCyAmCbMQ61JososGNnMkMrcqSFeLcHm-EniYn5BM2N6eqlht17SihfPq25DooCwvLqaVE_I4Gm3SMTpslTo_krydbE-s-m-sKn7WepEyMxsEuU3tPLLuQYzUOJmYwBZ6YoxUO_s5_NBQhkhwQESuI_hptDBd7rCNuNJbKdQDxdeL8qxqLQjjhVkGYH2dEYwnZuBkpS82JPOccVnIdbfh8wyECFDDwuG-Z144-mz69s8QepfaGpk',
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuDTBcrqQfldBlS1Qbgmx7mg_3d5pygMmM8ZBAN2twx9PaFt6XupAIhOMRNXCKxhWdkJ07wQCZWKvNvxNUY7reYVVRHhSnxnJoOae8EAFamSqAg4Mt15kxNMocYOq4JzI7utdfx3CYPjgsRbUCw5_Zbv3aJTmcJg_g1n-l89zWNxAoeJ42Pcz48nhAu0papsNlu3idgexGqnQA8iHOvxlgDWC505qzqaoxil0Iw2w-Ft9e1yBq4XedNEvT6tUehFsXr2vMNdHgVTqZk',
+];
 
 export default function Home() {
+  const [categories, setCategories] = useState<ApiCategory[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await categoryService.listCategories();
+        if (!cancelled) setCategories(data);
+      } catch {
+        if (!cancelled) setCategories([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedCategories = useMemo(() => categories.slice(0, 3), [categories]);
+
   return (
     <div className="pb-20">
       {/* Hero Section */}
@@ -42,45 +70,37 @@ export default function Home() {
             <p className="text-outline mt-2 text-lg">Khám phá các lĩnh vực tri thức tinh hoa.</p>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-6 h-[600px]">
-          <Link to="/explore?category=Fiction" className="md:col-span-2 md:row-span-2 group relative overflow-hidden rounded-3xl bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer block">
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzVeCeoneS95w1y7jHbGGEJCzbqWCcS1qzBhqpYBn5idFxMfqzA35ozgnqdl6nXa7hwZ-fz_ixsq63A3eC_rFx5wrhdI80nDOWfp_BCabRdpYq4DTW8L8u3dkQXcu3MRcnW9AnrSJlDcoHyw72q0MkIArDSRGOY8HaBR8oMzZhFO2jhJhG9Sgveu0QS9PTIslhHeCunPxXR7YIx9us6pf2hNfRUDc-6QgfgYMIg-IaAa9sGhtlGEoeEzE7Clyr9OsdBP1omoyN7bk"
-              alt="Fiction"
-              className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 opacity-60"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent"></div>
-            <div className="absolute bottom-8 left-8">
-              <span className="font-label text-xs uppercase tracking-widest text-on-primary-container mb-2 block">01</span>
-              <h3 className="font-serif text-4xl font-bold text-white mb-2">Fiction</h3>
-              <p className="text-white/70 max-w-xs">Những câu chuyện kinh điển vượt thời gian, định hình văn học thế giới.</p>
-            </div>
-          </Link>
-          <Link to="/explore?category=Science" className="md:col-span-2 group relative overflow-hidden rounded-3xl bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer block">
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbk71PJZgMedhD63Ml11OfyIkYCyAmCbMQ61JososGNnMkMrcqSFeLcHm-EniYn5BM2N6eqlht17SihfPq25DooCwvLqaVE_I4Gm3SMTpslTo_krydbE-s-m-sKn7WepEyMxsEuU3tPLLuQYzUOJmYwBZ6YoxUO_s5_NBQhkhwQESuI_hptDBd7rCNuNJbKdQDxdeL8qxqLQjjhVkGYH2dEYwnZuBkpS82JPOccVnIdbfh8wyECFDDwuG-Z144-mz69s8QepfaGpk"
-              alt="Science"
-              className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 opacity-60"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent"></div>
-            <div className="absolute bottom-8 left-8">
-              <span className="font-label text-xs uppercase tracking-widest text-on-primary-container mb-2 block">02</span>
-              <h3 className="font-serif text-3xl font-bold text-white mb-2">Science</h3>
-            </div>
-          </Link>
-          <Link to="/explore?category=History" className="md:col-span-2 group relative overflow-hidden rounded-3xl bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer block">
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTBcrqQfldBlS1Qbgmx7mg_3d5pygMmM8ZBAN2twx9PaFt6XupAIhOMRNXCKxhWdkJ07wQCZWKvNvxNUY7reYVVRHhSnxnJoOae8EAFamSqAg4Mt15kxNMocYOq4JzI7utdfx3CYPjgsRbUCw5_Zbv3aJTmcJg_g1n-l89zWNxAoeJ42Pcz48nhAu0papsNlu3idgexGqnQA8iHOvxlgDWC505qzqaoxil0Iw2w-Ft9e1yBq4XedNEvT6tUehFsXr2vMNdHgVTqZk"
-              alt="History"
-              className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 opacity-60"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent"></div>
-            <div className="absolute bottom-8 left-8">
-              <span className="font-label text-xs uppercase tracking-widest text-on-primary-container mb-2 block">03</span>
-              <h3 className="font-serif text-3xl font-bold text-white mb-2">History</h3>
-            </div>
-          </Link>
-        </div>
+        {selectedCategories.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-6 h-[600px]">
+            {selectedCategories.map((category, index) => (
+              <Link
+                key={category.id}
+                to={`/explore?category=${encodeURIComponent(category.id)}`}
+                className={`${index === 0 ? 'md:col-span-2 md:row-span-2' : 'md:col-span-2'} group relative overflow-hidden rounded-3xl bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer block`}
+              >
+                <img
+                  src={CATEGORY_IMAGES[index % CATEGORY_IMAGES.length]}
+                  alt={category.label}
+                  className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 opacity-60"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent"></div>
+                <div className="absolute bottom-8 left-8">
+                  <span className="font-label text-xs uppercase tracking-widest text-on-primary-container mb-2 block">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <h3 className={`font-serif font-bold text-white mb-2 ${index === 0 ? 'text-4xl' : 'text-3xl'}`}>
+                    {category.label}
+                  </h3>
+                  <p className="text-white/70 max-w-xs">{category.count}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="h-60 rounded-3xl bg-surface-container-low flex items-center justify-center text-on-surface-variant">
+            Chưa có dữ liệu danh mục từ hệ thống.
+          </div>
+        )}
       </section>
     </div>
   );

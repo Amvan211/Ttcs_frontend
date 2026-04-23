@@ -57,6 +57,44 @@ export default function AdminUsers() {
     return true;
   });
 
+  const handleCreate = () => {
+    const run = async () => {
+      const username = window.prompt('Username');
+      const password = window.prompt('Password');
+      if (!username?.trim() || !password?.trim()) return;
+      const created = await userService.createAdminUser({
+        username: username.trim(),
+        password: password.trim(),
+        fullName: username.trim(),
+        roleName: 'READER',
+        status: 'ACTIVE',
+      });
+      setUsers((prev) => [mapUser(created), ...prev]);
+    };
+    run().catch((e) => setErr(e instanceof Error ? e.message : 'Tạo người dùng thất bại'));
+  };
+
+  const handleEdit = (id: number) => {
+    const run = async () => {
+      const row = users.find((u) => u.id === id);
+      if (!row) return;
+      const nextStatus = window.prompt('Cập nhật trạng thái (ACTIVE/LOCKED)', row.status);
+      if (!nextStatus?.trim()) return;
+      const updated = await userService.updateAdminUser(id, { status: nextStatus.trim() });
+      setUsers((prev) => prev.map((u) => (u.id === id ? mapUser(updated) : u)));
+    };
+    run().catch((e) => setErr(e instanceof Error ? e.message : 'Cập nhật người dùng thất bại'));
+  };
+
+  const handleDelete = (id: number) => {
+    const run = async () => {
+      if (!window.confirm('Bạn muốn xóa người dùng này?')) return;
+      await userService.deleteAdminUser(id);
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+    };
+    run().catch((e) => setErr(e instanceof Error ? e.message : 'Xóa người dùng thất bại'));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start">
@@ -69,6 +107,7 @@ export default function AdminUsers() {
         </div>
         <button
           type="button"
+          onClick={handleCreate}
           className="flex items-center gap-2 px-6 py-2.5 bg-[#1e1b4b] text-white rounded-xl text-sm font-bold hover:bg-[#312e81] transition-colors shadow-lg shadow-[#1e1b4b]/20"
         >
           <Plus className="w-4 h-4" />
@@ -187,9 +226,14 @@ export default function AdminUsers() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button type="button" className="p-2 hover:bg-orange-50 rounded-lg transition-colors text-orange-500" title="Khóa tài khoản">
-                        <Lock className="w-4 h-4" />
-                      </button>
+                      <div className="flex justify-end gap-1">
+                        <button type="button" onClick={() => handleEdit(user.id)} className="p-2 hover:bg-orange-50 rounded-lg transition-colors text-orange-500" title="Cập nhật trạng thái">
+                          <Lock className="w-4 h-4" />
+                        </button>
+                        <button type="button" onClick={() => handleDelete(user.id)} className="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-500" title="Xóa tài khoản">
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

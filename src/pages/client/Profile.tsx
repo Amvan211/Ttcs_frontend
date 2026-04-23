@@ -26,6 +26,7 @@ function orderToTableRows(orders: ApiOrder[]) {
 
 export default function Profile() {
   const { user } = useAuth();
+  const avatarSrc = user?.avatarUrl || user?.avatar;
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -59,8 +60,8 @@ export default function Profile() {
             <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-3xl"></div>
             <div className="relative z-10 flex flex-col items-center text-center">
               <div className="w-32 h-32 rounded-full overflow-hidden mb-6 ring-4 ring-white shadow-xl bg-surface-dim flex items-center justify-center text-4xl font-serif font-bold text-primary">
-                {user?.avatar ? (
-                  <img src={user.avatar || user.avatarUrl} alt={user?.name || 'User'} className="w-full h-full object-cover" />
+                {avatarSrc ? (
+                  <img src={avatarSrc} alt={user?.name || 'User'} className="w-full h-full object-cover" />
                 ) : (
                   <span>{(user?.name || user?.email || '?').charAt(0).toUpperCase()}</span>
                 )}

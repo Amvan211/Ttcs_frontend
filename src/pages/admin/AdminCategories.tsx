@@ -13,7 +13,7 @@ export default function AdminCategories() {
     let cancelled = false;
     (async () => {
       try {
-        const list = await categoryService.listCategories();
+        const list = await categoryService.getAdminCategories();
         if (!cancelled) setCategories(list);
       } catch (e) {
         if (!cancelled) setErr(e instanceof Error ? e.message : 'Không tải được danh mục');
@@ -30,6 +30,41 @@ export default function AdminCategories() {
     const m = c.count?.match(/(\d+)/);
     return s + (m ? Number(m[1]) : 0);
   }, 0);
+
+  const handleCreate = () => {
+    const run = async () => {
+      const label = window.prompt('Nhập tên danh mục mới');
+      if (!label?.trim()) return;
+      const created = await categoryService.createAdminCategory({ name: label.trim() });
+      setCategories((prev) => [created, ...prev]);
+    };
+    run().catch((e) => setErr(e instanceof Error ? e.message : 'Tạo danh mục thất bại'));
+  };
+
+  const handleEdit = (id: string) => {
+    const run = async () => {
+      const current = categories.find((c) => c.id === id);
+      if (!current) return;
+      const nextLabel = window.prompt('Sửa tên danh mục', current.label);
+      if (!nextLabel?.trim()) return;
+      const categoryId = current.categoryId ?? Number(current.id);
+      const updated = await categoryService.updateAdminCategory(categoryId, { name: nextLabel.trim() });
+      setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)));
+    };
+    run().catch((e) => setErr(e instanceof Error ? e.message : 'Cập nhật danh mục thất bại'));
+  };
+
+  const handleDelete = (id: string) => {
+    const run = async () => {
+      if (!window.confirm('Bạn có chắc chắn muốn xóa danh mục này?')) return;
+      const current = categories.find((c) => c.id === id);
+      if (!current) return;
+      const categoryId = current.categoryId ?? Number(current.id);
+      await categoryService.deleteAdminCategory(categoryId);
+      setCategories((prev) => prev.filter((c) => c.id !== id));
+    };
+    run().catch((e) => setErr(e instanceof Error ? e.message : 'Xóa danh mục thất bại'));
+  };
 
   return (
     <div className="space-y-6">
@@ -59,6 +94,7 @@ export default function AdminCategories() {
           <div className="flex gap-3">
             <button
               type="button"
+              onClick={handleCreate}
               className="flex items-center gap-2 px-4 py-2 bg-[#1e1b4b] text-white rounded-lg text-sm font-semibold hover:bg-[#312e81] transition-colors shadow-sm"
             >
               <Plus className="w-4 h-4" />
@@ -124,10 +160,10 @@ export default function AdminCategories() {
                     <td className="px-6 py-4 text-sm text-slate-600">—</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button type="button" className="p-2 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors text-slate-400">
+                        <button type="button" onClick={() => handleEdit(category.id)} className="p-2 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors text-slate-400">
                           <Edit3 className="w-4 h-4" />
                         </button>
-                        <button type="button" className="p-2 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors text-slate-400">
+                        <button type="button" onClick={() => handleDelete(category.id)} className="p-2 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors text-slate-400">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>

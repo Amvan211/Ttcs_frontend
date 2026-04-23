@@ -15,5 +15,6 @@ export function authResponseToUser(a: AuthResponse): User {
     email: a.mail ?? undefined,
     role: normalizeRole(a.roleName),
     avatar: undefined,
+    avatarUrl: a.avatarUrl ?? undefined,
   };
 }

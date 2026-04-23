@@ -7,6 +7,7 @@ export interface AuthResponse {
   roleName: string;
   fullName?: string | null;
   mail?: string | null;
+  avatarUrl?: string | null;
 }
 
 export interface RegisterPayload {
@@ -56,6 +57,10 @@ export interface ApiCategory {
   count: string;
 }
 
+export interface AdminCategoryPayload {
+  name: string;
+}
+
 export interface CreateOrderPayload {
   note?: string;
   items: { bookId: number; quantity: number }[];
@@ -79,6 +84,13 @@ export interface ApiOrderLine {
   lineTotal: number;
 }
 
+export interface AdminOrderPayload {
+  userId: number;
+  status?: string;
+  note?: string;
+  items: { bookId: number; quantity: number }[];
+}
+
 export interface ApiUser {
   id: number;
   username: string;
@@ -87,6 +99,30 @@ export interface ApiUser {
   phone?: string | null;
   status: string;
   roleName: string;
+  avatarUrl?: string | null;
+}
+
+export interface AdminUserPayload {
+  username: string;
+  password?: string;
+  fullName?: string;
+  mail?: string;
+  phone?: string;
+  status?: string;
+  roleName?: string;
+  avatarUrl?: string;
+}
+
+export interface AdminBookPayload {
+  title: string;
+  author?: string;
+  price: number;
+  stockQuantity?: number;
+  description?: string;
+  coverImageUrl?: string;
+  categoryId: number;
+  partnerId?: number;
+  approvalStatus?: string;
 }
 
 export interface PartnerRegisterPayload {

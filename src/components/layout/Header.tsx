@@ -4,13 +4,15 @@ import { Search, ShoppingCart, User, LogOut, Store } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Header() {
+  const defaultAvatar =
+    'https://cdn2.tuoitre.vn/zoom/700_390/471584752817336320/2026/4/14/rectanglelargetype2ef9e108e607f9d112d29071d2b746c6f-1776140413918800777816-0-0-667-1273-crop-1776140442101536784573.jpg';
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { isLoggedIn, user, logout } = useAuth();
-  console.log("Dữ liệu User hiện tại:", user);
+  const avatarSrc = user?.avatarUrl || user?.avatar || defaultAvatar;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -99,7 +101,7 @@ export default function Header() {
                   <span className="text-xs font-bold text-primary font-body">{user?.name || 'User'}</span>
                   <div className="w-8 h-8 rounded-full overflow-hidden border border-primary/10">
                     <img
-                      src={user?.avatar || "https://cdn2.tuoitre.vn/zoom/700_390/471584752817336320/2026/4/14/rectanglelargetype2ef9e108e607f9d112d29071d2b746c6f-1776140413918800777816-0-0-667-1273-crop-1776140442101536784573.jpg"}
+                      src={avatarSrc}
                       alt="User Avatar"
                       className="w-full h-full object-cover"
                     />

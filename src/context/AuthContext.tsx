@@ -6,6 +6,7 @@ export interface User {
   email?: string;
   role: 'READER' | 'PARTNER' | 'ADMIN';
   avatar?: string;
+  avatarUrl?: string;
 }
 
 const AUTH_KEY = 'auth_data';

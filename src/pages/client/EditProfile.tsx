@@ -5,6 +5,10 @@ import { useAuth } from '../../context/AuthContext';
 export default function EditProfile() {
   const location = useLocation();
   const { user } = useAuth();
+  const avatarSrc =
+    user?.avatarUrl ||
+    user?.avatar ||
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuDdLQq6xANP9_bYDRsK_AJLaZNkZBH7msFY3v1s7fzZK4q9nXoN0IJKofuyFSd-h6Pj22bckro-FswYUnWJIueSvorj3-kLhlCCWQyFzSfV2pYpnCk4wXJfVW3xlYoO1Jb2My4fSdGyT7nrSt3IRXLgNeUfViPmFemVumnKQK09GLStx0CKXomclNNFDWWkqH8Xvg0AgJENLRBKl5OkSjm3LqP9wrM_Z2xykeo8cabOdyVJOmNoV763Z78lCm9cMgRdVcHlAppgQqE';
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -16,7 +20,7 @@ export default function EditProfile() {
           <div className="bg-surface-container-low rounded-xl p-8 text-center md:text-left overflow-hidden relative">
             <div className="w-32 h-32 rounded-full overflow-hidden mx-auto md:mx-0 mb-6 ring-4 ring-white shadow-lg">
               <img
-                src={user?.avatar || "https://lh3.googleusercontent.com/aida-public/AB6AXuDdLQq6xANP9_bYDRsK_AJLaZNkZBH7msFY3v1s7fzZK4q9nXoN0IJKofuyFSd-h6Pj22bckro-FswYUnWJIueSvorj3-kLhlCCWQyFzSfV2pYpnCk4wXJfVW3xlYoO1Jb2My4fSdGyT7nrSt3IRXLgNeUfViPmFemVumnKQK09GLStx0CKXomclNNFDWWkqH8Xvg0AgJENLRBKl5OkSjm3LqP9wrM_Z2xykeo8cabOdyVJOmNoV763Z78lCm9cMgRdVcHlAppgQqE"}
+                src={avatarSrc}
                 alt={user?.name || "User Avatar"}
                 className="w-full h-full object-cover"
               />
