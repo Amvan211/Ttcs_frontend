@@ -39,15 +39,19 @@ export default function AdminBooks() {
     const run = async () => {
       const title = window.prompt('Tên sách mới');
       if (!title?.trim()) return;
+      const author = window.prompt('Tác giả', 'Chưa cập nhật') || 'Chưa cập nhật';
+      const price = Number(window.prompt('Giá', '0'));
+      const stockQuantity = Number(window.prompt('Tồn kho', '0'));
       const categoryIdRaw = window.prompt('Nhập categoryId', '1');
       const categoryId = Number(categoryIdRaw);
       if (!Number.isFinite(categoryId)) return;
       const created = await bookService.createAdminBook({
         title: title.trim(),
-        author: 'Chưa cập nhật',
-        price: 0,
-        stockQuantity: 0,
+        author: author.trim(),
+        price: Number.isFinite(price) ? price : 0,
+        stockQuantity: Number.isFinite(stockQuantity) ? stockQuantity : 0,
         categoryId,
+        approvalStatus: 'APPROVED',
       });
       setBooks((prev) => [created, ...prev]);
     };
@@ -60,7 +64,14 @@ export default function AdminBooks() {
       if (!row) return;
       const title = window.prompt('Cập nhật tên sách', row.title);
       if (!title?.trim()) return;
-      const updated = await bookService.updateAdminBook(id, { title: title.trim() });
+      const approvalStatus = window.prompt(
+        'Trạng thái duyệt (PENDING/APPROVED/REJECTED)',
+        row.approvalStatus || 'APPROVED'
+      );
+      const updated = await bookService.updateAdminBook(id, {
+        title: title.trim(),
+        approvalStatus: (approvalStatus || 'APPROVED').toUpperCase(),
+      });
       setBooks((prev) => prev.map((b) => (b.id === id ? updated : b)));
     };
     run().catch((e) => setErr(e instanceof Error ? e.message : 'Cập nhật sách thất bại'));
@@ -80,11 +91,11 @@ export default function AdminBooks() {
       <div className="flex justify-between items-start flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-serif font-black text-[#1e1b4b]">Quản lý Kho Sách</h1>
-          <p className="text-sm text-slate-500 mt-2 max-w-md">Sách chờ duyệt từ đối tác — đồng bộ từ API admin.</p>
+          <p className="text-sm text-slate-500 mt-2 max-w-md">CRUD sách theo dữ liệu thực tế từ API admin.</p>
         </div>
         <div className="flex gap-6">
           <div className="text-right">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sách chờ duyệt</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tổng đầu sách</p>
             <p className="text-3xl font-black text-[#4f46e5]">{loading ? '…' : books.length}</p>
           </div>
           <div className="w-px h-12 bg-slate-200" />
@@ -157,7 +168,7 @@ export default function AdminBooks() {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-slate-500 text-sm">
-                    Không có sách chờ duyệt.
+                    Không có sách.
                   </td>
                 </tr>
               ) : (

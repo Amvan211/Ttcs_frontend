@@ -32,6 +32,7 @@ export interface ApiBook {
   coverImage?: string | null;
   category?: string | null;
   stock?: number | null;
+  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | string | null;
 }
 
 export interface ApiBookDetail extends ApiBook {
@@ -138,5 +139,6 @@ export interface PartnerBookRequest {
   stockQuantity: number;
   description?: string;
   coverImageUrl?: string;
+  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   categoryId: number;
 }

@@ -4,11 +4,11 @@ import { Filter, Download, MoreVertical, ShieldCheck, AlertTriangle, Activity, P
 import { userService } from '../../services';
 import type { ApiUser } from '../../types/api';
 
-function normalizeRole(roleName: string | undefined): 'ADMIN' | 'PARTNER' | 'READER' {
+function normalizeRole(roleName: string | undefined): 'ADMIN' | 'PARTNER' | 'CUSTOMER' {
   const u = roleName?.toUpperCase() ?? '';
   if (u === 'ADMIN') return 'ADMIN';
   if (u === 'PARTNER') return 'PARTNER';
-  return 'READER';
+  return 'CUSTOMER';
 }
 
 function mapUser(u: ApiUser) {
@@ -52,7 +52,7 @@ export default function AdminUsers() {
   const filteredUsers = users.filter((user) => {
     if (activeTab === 'All') return true;
     if (activeTab === 'Administrators') return user.role === 'ADMIN';
-    if (activeTab === 'Readers') return user.role === 'READER';
+    if (activeTab === 'Readers') return user.role === 'CUSTOMER';
     if (activeTab === 'Partners') return user.role === 'PARTNER';
     return true;
   });
@@ -66,7 +66,7 @@ export default function AdminUsers() {
         username: username.trim(),
         password: password.trim(),
         fullName: username.trim(),
-        roleName: 'READER',
+        roleName: 'CUSTOMER',
         status: 'ACTIVE',
       });
       setUsers((prev) => [mapUser(created), ...prev]);

@@ -8,7 +8,7 @@ export interface Book {
   category: string;
   tags?: string[];
   stock?: number;
-  status?: 'Đang bán' | 'Hết hàng' | 'Bản in giới hạn' | 'Bản in đặc biệt';
+  status?: 'Đang bán' | 'Hết hàng' | 'Chờ duyệt' | 'Ngừng kinh doanh' | 'Bản in giới hạn' | 'Bản in đặc biệt';
 }
 
 export interface Order {

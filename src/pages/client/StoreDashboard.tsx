@@ -26,7 +26,7 @@ export default function StoreDashboard() {
     author: '',
     price: 0,
     stock: 0,
-    status: 'Đang bán',
+    status: 'APPROVED',
     coverImage: '',
     categoryId: 0,
   });
@@ -69,6 +69,11 @@ export default function StoreDashboard() {
 
   const handleOpenModal = (book?: Book) => {
     setSaveErr(null);
+    const toApprovalStatus = (status?: string) => {
+      if (status === 'Chờ duyệt') return 'PENDING';
+      if (status === 'Ngừng kinh doanh') return 'REJECTED';
+      return 'APPROVED';
+    };
     if (book) {
       setEditingBook(book);
       setFormData({
@@ -76,7 +81,7 @@ export default function StoreDashboard() {
         author: book.author,
         price: book.price,
         stock: book.stock || 0,
-        status: book.status || 'Đang bán',
+        status: toApprovalStatus(book.status),
         coverImage: book.coverImage,
         categoryId: defaultCategoryId(),
       });
@@ -87,7 +92,7 @@ export default function StoreDashboard() {
         author: '',
         price: 0,
         stock: 0,
-        status: 'Đang bán',
+        status: 'APPROVED',
         coverImage: '',
         categoryId: defaultCategoryId(),
       });
@@ -109,24 +114,26 @@ export default function StoreDashboard() {
   const handleSaveBook = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaveErr(null);
-    if (editingBook) {
-      setSaveErr('Chỉnh sửa sách trên server chưa được hỗ trợ trong giao diện này.');
-      return;
-    }
     if (!formData.categoryId) {
       setSaveErr('Vui lòng chọn danh mục (cần categoryId từ máy chủ).');
       return;
     }
     setSaveLoading(true);
     try {
-      await partnerService.addBook({
+      const payload = {
         title: formData.title.trim(),
         author: formData.author.trim() || undefined,
         price: Number(formData.price),
         stockQuantity: Math.max(0, Math.floor(Number(formData.stock))),
         coverImageUrl: formData.coverImage.trim() || undefined,
+        approvalStatus: formData.status as 'PENDING' | 'APPROVED' | 'REJECTED',
         categoryId: formData.categoryId,
-      });
+      };
+      if (editingBook) {
+        await partnerService.updateBook(Number(editingBook.id), payload);
+      } else {
+        await partnerService.addBook(payload);
+      }
       const inv = await partnerService.getInventory();
       setBooks(inv.map(mapApiBookToBook));
       setIsModalOpen(false);
@@ -255,6 +262,7 @@ export default function StoreDashboard() {
               <option value="All">Tất cả trạng thái</option>
               <option value="Đang bán">Đang bán</option>
               <option value="Hết hàng">Hết hàng</option>
+              <option value="Chờ duyệt">Chờ duyệt</option>
               <option value="Ngừng kinh doanh">Ngừng kinh doanh</option>
             </select>
           </div>
@@ -317,7 +325,7 @@ export default function StoreDashboard() {
                         type="button"
                         onClick={() => handleOpenModal(book)}
                         className="p-2 hover:bg-surface-container-highest rounded-full text-primary"
-                        title="Xem / chỉnh sửa (chỉnh sửa server chưa hỗ trợ)"
+                        title="Chỉnh sửa sách"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
@@ -404,6 +412,18 @@ export default function StoreDashboard() {
                     onChange={(e) => setFormData({...formData, price: Number(e.target.value)})}
                     className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
                   />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Trạng thái sách</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                  >
+                    <option value="APPROVED">Đang bán</option>
+                    <option value="PENDING">Chờ duyệt</option>
+                    <option value="REJECTED">Ngừng kinh doanh</option>
+                  </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Tồn kho</label>

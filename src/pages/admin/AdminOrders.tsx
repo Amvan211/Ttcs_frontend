@@ -41,7 +41,7 @@ export default function AdminOrders() {
       if (!Number.isFinite(userId) || !Number.isFinite(bookId) || !Number.isFinite(quantity)) return;
       await orderService.createAdminOrder({
         userId,
-        status: 'processing',
+        status: 'Mới',
         items: [{ bookId, quantity }],
       });
       const list = await orderService.getAdminOrders();

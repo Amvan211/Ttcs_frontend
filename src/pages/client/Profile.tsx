@@ -30,6 +30,7 @@ export default function Profile() {
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<ApiOrder | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -180,12 +181,16 @@ export default function Profile() {
                             </span>
                           </td>
                           <td className="px-6 py-6 text-right">
-                            <Link
-                              to={`/order/${order.id}`}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const found = orders.find((o) => o.id === order.id) ?? null;
+                                setSelectedOrder(found);
+                              }}
                               className="p-2 hover:bg-surface-container-high rounded-full transition-colors inline-block"
                             >
                               <ArrowRight className="w-5 h-5 text-on-surface-variant -rotate-45" />
-                            </Link>
+                            </button>
                           </td>
                         </tr>
                       ))
@@ -227,6 +232,36 @@ export default function Profile() {
           </div>
         </section>
       </div>
+      {selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 md:p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-serif text-2xl font-bold">Chi tiết đơn hàng #{selectedOrder.id}</h3>
+              <button type="button" className="text-sm font-semibold text-primary" onClick={() => setSelectedOrder(null)}>
+                Đóng
+              </button>
+            </div>
+            <p className="text-sm text-on-surface-variant mb-4">
+              Ngày đặt: {formatOrderDate(selectedOrder.orderDate ?? null)} - Trạng thái: {selectedOrder.status}
+            </p>
+            <div className="space-y-3">
+              {(selectedOrder.items ?? []).map((line) => (
+                <div key={`${line.bookId}-${line.quantity}`} className="p-4 rounded-xl bg-surface-container-low flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-semibold">{line.bookTitle}</p>
+                    <p className="text-sm text-on-surface-variant">SL: {line.quantity}</p>
+                  </div>
+                  <p className="font-bold">{(line.lineTotal ?? line.unitPrice * line.quantity).toLocaleString('vi-VN')}đ</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 pt-4 border-t border-outline-variant/30 text-right">
+              <p className="text-sm text-on-surface-variant">Tổng đơn</p>
+              <p className="text-2xl font-bold text-primary">{selectedOrder.totalAmount.toLocaleString('vi-VN')}đ</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
