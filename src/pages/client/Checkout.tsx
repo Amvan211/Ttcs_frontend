@@ -26,6 +26,7 @@ export default function Checkout() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [email, setEmail] = useState('');
   const [note, setNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,18 +39,17 @@ export default function Checkout() {
   const [manualVoucherCode, setManualVoucherCode] = useState('');
 
   useEffect(() => {
-    if (!isLoggedIn) {
-      navigate('/login', { replace: true, state: { from: '/checkout', singleItem: location.state?.singleItem } });
-    } else {
+    if (isLoggedIn) {
       voucherService.getMyVouchers()
         .then(setAvailableVouchers)
         .catch(console.error);
     }
-  }, [isLoggedIn, navigate]);
+  }, [isLoggedIn]);
 
   useEffect(() => {
     if (user?.name) setFullName((n) => n || user.name);
-  }, [user?.name]);
+    if (user?.email) setEmail((e) => e || user.email);
+  }, [user]);
 
   const subtotal = useMemo(
     () => checkoutItems.reduce((sum, { book, quantity }) => sum + book.price * quantity, 0),
@@ -76,7 +76,6 @@ export default function Checkout() {
     `MOMO|amount=${totalWithShipping}|content=${momoTransferContent}|merchant=THE_ARCHIVE`
   )}`;
 
-  if (!isLoggedIn) return null;
 
   if (checkoutItems.length === 0 && !isSuccess) {
     return (
@@ -109,6 +108,7 @@ export default function Checkout() {
 
       const order = await orderService.createOrder({
         note: shippingBlock,
+        email: email.trim() || undefined,
         items: checkoutItems.map(({ book, quantity }) => ({
           bookId: Number(book.id),
           quantity,
@@ -138,6 +138,10 @@ export default function Checkout() {
         <p className="text-on-surface-variant font-medium tracking-wide mb-8 max-w-md mx-auto leading-relaxed">
           Cảm ơn bạn đã mua sắm tại The Archive. Đơn hàng{' '}
           <span className="font-bold text-primary">#{placedOrderId != null ? `ORD-${placedOrderId}` : '—'}</span> của bạn đang được xử lý.
+          <br />
+          <span className="text-primary font-bold text-sm block mt-3">
+            Mã QR thanh toán và hóa đơn đã được gửi tới email <span className="underline">{email}</span>. Vui lòng kiểm tra hộp thư của bạn!
+          </span>
         </p>
         <div className="flex gap-4">
           <Link
@@ -146,12 +150,14 @@ export default function Checkout() {
           >
             Tiếp tục mua sắm
           </Link>
-          <Link
-            to="/profile"
-            className="inline-flex items-center justify-center px-8 py-3 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-all shadow-lg"
-          >
-            Xem đơn hàng
-          </Link>
+          {isLoggedIn && (
+            <Link
+              to="/profile"
+              className="inline-flex items-center justify-center px-8 py-3 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-all shadow-lg"
+            >
+              Xem đơn hàng
+            </Link>
+          )}
         </div>
       </div>
     );
@@ -207,6 +213,17 @@ export default function Checkout() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Nhập số điện thoại"
+                  className="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Địa chỉ Email</label>
+                <input
+                  required
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="example@gmail.com (Dùng để nhận hóa đơn và thông tin thanh toán)"
                   className="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                 />
               </div>
@@ -361,39 +378,41 @@ export default function Checkout() {
               </p>
             </div>
 
-            <div className="pt-4 pb-6 border-b border-outline-variant/30 mb-6 space-y-4">
-              <h3 className="font-bold text-sm text-primary uppercase tracking-wider">Mã giảm giá</h3>
-              {availableVouchers.length > 0 && (
-                <select
-                  value={selectedVoucherId}
-                  onChange={(e) => {
-                    setSelectedVoucherId(e.target.value === '' ? '' : Number(e.target.value));
-                    setManualVoucherCode('');
-                  }}
-                  className="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
-                >
-                  <option value="">-- Chọn voucher của bạn --</option>
-                  {availableVouchers.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.code} - {v.description || (v.discountType === 'FIXED_AMOUNT' ? `Giảm ${v.discountValue.toLocaleString()}đ` : `Giảm ${v.discountValue}%`)}
-                    </option>
-                  ))}
-                </select>
-              )}
-              
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  placeholder="Hoặc nhập mã voucher..." 
-                  value={manualVoucherCode}
-                  onChange={(e) => {
-                    setManualVoucherCode(e.target.value);
-                    if (e.target.value) setSelectedVoucherId('');
-                  }}
-                  className="flex-1 px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm uppercase"
-                />
+            {isLoggedIn && (
+              <div className="pt-4 pb-6 border-b border-outline-variant/30 mb-6 space-y-4">
+                <h3 className="font-bold text-sm text-primary uppercase tracking-wider">Mã giảm giá</h3>
+                {availableVouchers.length > 0 && (
+                  <select
+                    value={selectedVoucherId}
+                    onChange={(e) => {
+                      setSelectedVoucherId(e.target.value === '' ? '' : Number(e.target.value));
+                      setManualVoucherCode('');
+                    }}
+                    className="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
+                  >
+                    <option value="">-- Chọn voucher của bạn --</option>
+                    {availableVouchers.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.code} - {v.description || (v.discountType === 'FIXED_AMOUNT' ? `Giảm ${v.discountValue.toLocaleString()}đ` : `Giảm ${v.discountValue}%`)}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="Hoặc nhập mã voucher..." 
+                    value={manualVoucherCode}
+                    onChange={(e) => {
+                      setManualVoucherCode(e.target.value);
+                      if (e.target.value) setSelectedVoucherId('');
+                    }}
+                    className="flex-1 px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm uppercase"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="pt-2 border-t border-outline-variant/30 mb-8">
               <div className="flex justify-between items-baseline">

@@ -64,6 +64,9 @@ export interface AdminCategoryPayload {
 
 export interface CreateOrderPayload {
   note?: string;
+  email?: string;
+  voucherId?: number;
+  voucherCode?: string;
   items: { bookId: number; quantity: number }[];
 }
 
