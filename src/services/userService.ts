@@ -7,4 +7,6 @@ export const userService = {
   updateAdminUser: (id: number, payload: Partial<AdminUserPayload>) =>
     apiClient.put<ApiUser>(`/api/admin/users/${id}`, payload),
   deleteAdminUser: (id: number) => apiClient.delete<void>(`/api/admin/users/${id}`),
+  getPendingPartners: () => apiClient.get<import('../types/api').ApiPartner[]>('/api/admin/partners/pending'),
+  approvePartner: (id: number) => apiClient.put<import('../types/api').ApiPartner>(`/api/admin/partners/${id}/approve`, {}),
 };

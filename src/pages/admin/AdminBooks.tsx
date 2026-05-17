@@ -35,48 +35,6 @@ export default function AdminBooks() {
 
   const totalStock = books.reduce((s, b) => s + (b.stock ?? 0), 0);
 
-  const handleCreate = () => {
-    const run = async () => {
-      const title = window.prompt('Tên sách mới');
-      if (!title?.trim()) return;
-      const author = window.prompt('Tác giả', 'Chưa cập nhật') || 'Chưa cập nhật';
-      const price = Number(window.prompt('Giá', '0'));
-      const stockQuantity = Number(window.prompt('Tồn kho', '0'));
-      const categoryIdRaw = window.prompt('Nhập categoryId', '1');
-      const categoryId = Number(categoryIdRaw);
-      if (!Number.isFinite(categoryId)) return;
-      const created = await bookService.createAdminBook({
-        title: title.trim(),
-        author: author.trim(),
-        price: Number.isFinite(price) ? price : 0,
-        stockQuantity: Number.isFinite(stockQuantity) ? stockQuantity : 0,
-        categoryId,
-        approvalStatus: 'APPROVED',
-      });
-      setBooks((prev) => [created, ...prev]);
-    };
-    run().catch((e) => setErr(e instanceof Error ? e.message : 'Tạo sách thất bại'));
-  };
-
-  const handleEdit = (id: number) => {
-    const run = async () => {
-      const row = books.find((b) => b.id === id);
-      if (!row) return;
-      const title = window.prompt('Cập nhật tên sách', row.title);
-      if (!title?.trim()) return;
-      const approvalStatus = window.prompt(
-        'Trạng thái duyệt (PENDING/APPROVED/REJECTED)',
-        row.approvalStatus || 'APPROVED'
-      );
-      const updated = await bookService.updateAdminBook(id, {
-        title: title.trim(),
-        approvalStatus: (approvalStatus || 'APPROVED').toUpperCase(),
-      });
-      setBooks((prev) => prev.map((b) => (b.id === id ? updated : b)));
-    };
-    run().catch((e) => setErr(e instanceof Error ? e.message : 'Cập nhật sách thất bại'));
-  };
-
   const handleDelete = (id: number) => {
     const run = async () => {
       if (!window.confirm('Xóa sách này khỏi danh sách?')) return;
@@ -121,14 +79,6 @@ export default function AdminBooks() {
             />
           </div>
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleCreate}
-              className="flex items-center gap-2 px-4 py-2 bg-[#1e1b4b] text-white rounded-lg text-sm font-semibold hover:bg-[#312e81] transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Thêm sách
-            </button>
             <button
               type="button"
               className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
@@ -214,9 +164,6 @@ export default function AdminBooks() {
                       <td className="px-6 py-4 text-sm font-semibold text-slate-700">—</td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
-                          <button type="button" onClick={() => handleEdit(book.id)} className="p-2 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors text-slate-400">
-                            <Edit3 className="w-4 h-4" />
-                          </button>
                           <button type="button" onClick={() => handleDelete(book.id)} className="p-2 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors text-slate-400">
                             <Trash2 className="w-4 h-4" />
                           </button>

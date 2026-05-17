@@ -140,5 +140,15 @@ export interface PartnerBookRequest {
   description?: string;
   coverImageUrl?: string;
   approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
-  categoryId: number;
+}
+
+export interface ApiPartner {
+  id: number;
+  storeName: string;
+  address: string;
+  description: string;
+  status: string;
+  username?: string;
+  fullName?: string;
+  email?: string;
 }

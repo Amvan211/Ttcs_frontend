@@ -8,6 +8,9 @@ export const orderService = {
   createOrder: (payload: CreateOrderPayload) =>
     apiClient.post<ApiOrder>('/api/orders', payload),
 
+  checkPurchase: (bookId: number) => 
+    apiClient.get<{ canReview: boolean }>(`/api/orders/check-purchase?bookId=${bookId}`),
+
   getAdminOrders: () => apiClient.get<AdminOrderRow[]>('/api/admin/orders'),
   createAdminOrder: (payload: AdminOrderPayload) => apiClient.post<ApiOrder>('/api/admin/orders', payload),
   updateAdminOrder: (id: number, payload: Partial<AdminOrderPayload>) =>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { User, Lock, Settings, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { authService } from '../../services/authService';
 
 export default function ChangePassword() {
   const { user } = useAuth();
@@ -12,7 +13,40 @@ export default function ChangePassword() {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [err, setErr] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErr('');
+    setSuccess('');
+    if (newPassword !== confirmPassword) {
+      setErr('Mật khẩu xác nhận không khớp');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setErr('Mật khẩu mới phải có ít nhất 6 ký tự');
+      return;
+    }
+    setLoading(true);
+    setLoading(true);
+    try {
+      await authService.changePassword({ oldPassword, newPassword });
+      setSuccess('Đổi mật khẩu thành công!');
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : 'Đổi mật khẩu thất bại');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-1 pt-12 max-w-screen-2xl mx-auto w-full">
       {/* SideNavBar */}
@@ -64,7 +98,10 @@ export default function ChangePassword() {
             {/* Subtle editorial accent */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
             
-            <form className="space-y-8 relative z-10">
+            {err && <div className="mb-6 p-4 rounded-xl bg-red-50 text-red-700 border border-red-100">{err}</div>}
+            {success && <div className="mb-6 p-4 rounded-xl bg-green-50 text-green-700 border border-green-100">{success}</div>}
+
+            <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
               {/* Mật khẩu hiện tại */}
               <div className="group">
                 <label className="block text-xs uppercase tracking-widest text-on-surface-variant font-bold mb-2">
@@ -73,6 +110,9 @@ export default function ChangePassword() {
                 <div className="relative flex items-center">
                   <input
                     type={showCurrent ? "text" : "password"}
+                    required
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
                     placeholder="••••••••"
                     className="w-full bg-transparent border-0 border-b border-outline-variant py-3 focus:ring-0 focus:border-primary transition-all duration-300 placeholder:text-outline/40"
                   />
@@ -90,6 +130,9 @@ export default function ChangePassword() {
                 <div className="relative flex items-center">
                   <input
                     type={showNew ? "text" : "password"}
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="••••••••"
                     className="w-full bg-transparent border-0 border-b border-outline-variant py-3 focus:ring-0 focus:border-primary transition-all duration-300 placeholder:text-outline/40"
                   />
@@ -107,6 +150,9 @@ export default function ChangePassword() {
                 <div className="relative flex items-center">
                   <input
                     type={showConfirm ? "text" : "password"}
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
                     className="w-full bg-transparent border-0 border-b border-outline-variant py-3 focus:ring-0 focus:border-primary transition-all duration-300 placeholder:text-outline/40"
                   />
@@ -118,8 +164,8 @@ export default function ChangePassword() {
 
               {/* Submit Button */}
               <div className="pt-6">
-                <button type="submit" className="w-full md:w-auto px-12 py-4 bg-gradient-to-r from-primary to-primary-container text-white rounded-full font-semibold shadow-lg hover:opacity-90 active:scale-[0.98] transition-all duration-300">
-                  Xác nhận thay đổi
+                <button type="submit" disabled={loading} className="w-full md:w-auto px-12 py-4 bg-gradient-to-r from-primary to-primary-container text-white rounded-full font-semibold shadow-lg hover:opacity-90 active:scale-[0.98] transition-all duration-300 disabled:opacity-50">
+                  {loading ? 'Đang cập nhật...' : 'Xác nhận thay đổi'}
                 </button>
               </div>
             </form>

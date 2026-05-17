@@ -1,16 +1,61 @@
+import { useState, useEffect } from 'react';
 import { User, Lock, Settings, ChevronRight, ShieldCheck, PenTool } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { authService } from '../../services';
 
 export default function EditProfile() {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, login } = useAuth(); // useAuth should maybe have an updateUser method, or we can just re-authenticate or manually update state. But updating local state is fine if we can.
+  // We'll assume the AuthContext doesn't have an update user method. So we'll try to just show a success message.
+  
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [storeName, setStoreName] = useState('');
+  const [address, setAddress] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      setFullName(user.name || '');
+      setEmail(user.email || '');
+      setPhone(user.phone || '');
+      // If we had a way to get partner details, we would set them here. 
+      // For now, we will leave them empty or use placeholder if not available in `user` object.
+    }
+  }, [user]);
+
   const avatarSrc =
     user?.avatarUrl ||
     user?.avatar ||
     'https://lh3.googleusercontent.com/aida-public/AB6AXuDdLQq6xANP9_bYDRsK_AJLaZNkZBH7msFY3v1s7fzZK4q9nXoN0IJKofuyFSd-h6Pj22bckro-FswYUnWJIueSvorj3-kLhlCCWQyFzSfV2pYpnCk4wXJfVW3xlYoO1Jb2My4fSdGyT7nrSt3IRXLgNeUfViPmFemVumnKQK09GLStx0CKXomclNNFDWWkqH8Xvg0AgJENLRBKl5OkSjm3LqP9wrM_Z2xykeo8cabOdyVJOmNoV763Z78lCm9cMgRdVcHlAppgQqE';
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+    setIsSubmitting(true);
+    try {
+      await authService.updateProfile({
+        fullName,
+        mail: email,
+        phone,
+        storeName: storeName || undefined,
+        address: address || undefined,
+      });
+      setSuccessMsg('Hồ sơ đã được lưu lại thành công.');
+      // If we need to update the context, we could fetch user info again if an API exists.
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Có lỗi xảy ra khi lưu hồ sơ');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex-grow pt-12 pb-20 px-8 max-w-screen-2xl mx-auto w-full">
@@ -57,7 +102,10 @@ export default function EditProfile() {
           </div>
 
           <div className="bg-surface-container-lowest rounded-xl p-0 md:p-4">
-            <form className="space-y-10">
+            {successMsg && <div className="mb-6 p-4 rounded-xl bg-green-50 text-green-700 border border-green-100">{successMsg}</div>}
+            {errorMsg && <div className="mb-6 p-4 rounded-xl bg-red-50 text-red-700 border border-red-100">{errorMsg}</div>}
+            
+            <form onSubmit={handleSubmit} className="space-y-10">
               {/* Form Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
                 {/* Họ và Tên */}
@@ -65,7 +113,8 @@ export default function EditProfile() {
                   <label className="text-xs font-sans uppercase tracking-[0.1em] text-on-surface-variant font-bold px-1">Họ và Tên</label>
                   <input
                     type="text"
-                    defaultValue={user?.name || "Alexander"}
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
                     placeholder="Nhập họ và tên..."
                     className="bg-transparent border-0 border-b border-outline-variant py-3 px-1 focus:ring-0 focus:border-primary text-on-surface text-lg font-medium transition-all"
                   />
@@ -75,41 +124,50 @@ export default function EditProfile() {
                   <label className="text-xs font-sans uppercase tracking-[0.1em] text-on-surface-variant font-bold px-1">Địa chỉ Email</label>
                   <input
                     type="email"
-                    defaultValue={user?.email || "alexander@archive.com"}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
                     className="bg-transparent border-0 border-b border-outline-variant py-3 px-1 focus:ring-0 focus:border-primary text-on-surface text-lg font-medium transition-all"
                   />
                 </div>
-                {/* Tên cửa hàng */}
+                {/* Số điện thoại */}
                 <div className="flex flex-col space-y-2 group">
-                  <label className="text-xs font-sans uppercase tracking-[0.1em] text-on-surface-variant font-bold px-1">Tên cửa hàng</label>
+                  <label className="text-xs font-sans uppercase tracking-[0.1em] text-on-surface-variant font-bold px-1">Số điện thoại</label>
                   <input
-                    type="text"
-                    defaultValue="The Archive Partner"
-                    placeholder="Tên đơn vị lưu trữ..."
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Nhập số điện thoại..."
                     className="bg-transparent border-0 border-b border-outline-variant py-3 px-1 focus:ring-0 focus:border-primary text-on-surface text-lg font-medium transition-all"
                   />
                 </div>
-                {/* Số tài khoản */}
-                <div className="flex flex-col space-y-2 group">
-                  <label className="text-xs font-sans uppercase tracking-[0.1em] text-on-surface-variant font-bold px-1">Số tài khoản</label>
-                  <input
-                    type="text"
-                    defaultValue="123-456-789"
-                    placeholder="xxx-xxx-xxx"
-                    className="bg-transparent border-0 border-b border-outline-variant py-3 px-1 focus:ring-0 focus:border-primary text-on-surface text-lg font-medium transition-all"
-                  />
-                </div>
-                {/* Địa chỉ (Full Width) */}
-                <div className="flex flex-col space-y-2 group md:col-span-2">
-                  <label className="text-xs font-sans uppercase tracking-[0.1em] text-on-surface-variant font-bold px-1">Địa chỉ</label>
-                  <input
-                    type="text"
-                    defaultValue="123 Phố Sách, Hà Nội"
-                    placeholder="Địa chỉ thường trú..."
-                    className="bg-transparent border-0 border-b border-outline-variant py-3 px-1 focus:ring-0 focus:border-primary text-on-surface text-lg font-medium transition-all"
-                  />
-                </div>
+                
+                {user?.role === 'PARTNER' && (
+                  <>
+                    {/* Tên cửa hàng */}
+                    <div className="flex flex-col space-y-2 group">
+                      <label className="text-xs font-sans uppercase tracking-[0.1em] text-on-surface-variant font-bold px-1">Tên cửa hàng</label>
+                      <input
+                        type="text"
+                        value={storeName}
+                        onChange={(e) => setStoreName(e.target.value)}
+                        placeholder="Tên đơn vị lưu trữ..."
+                        className="bg-transparent border-0 border-b border-outline-variant py-3 px-1 focus:ring-0 focus:border-primary text-on-surface text-lg font-medium transition-all"
+                      />
+                    </div>
+                    {/* Địa chỉ (Full Width) */}
+                    <div className="flex flex-col space-y-2 group md:col-span-2">
+                      <label className="text-xs font-sans uppercase tracking-[0.1em] text-on-surface-variant font-bold px-1">Địa chỉ cửa hàng</label>
+                      <input
+                        type="text"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="Địa chỉ..."
+                        className="bg-transparent border-0 border-b border-outline-variant py-3 px-1 focus:ring-0 focus:border-primary text-on-surface text-lg font-medium transition-all"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -118,11 +176,11 @@ export default function EditProfile() {
                   Dữ liệu của bạn được mã hóa và bảo mật theo tiêu chuẩn thư viện quốc gia.
                 </p>
                 <div className="flex items-center space-x-4 w-full md:w-auto">
-                  <button type="button" className="flex-1 md:flex-none px-8 py-3 rounded-full border border-outline-variant text-on-surface font-bold hover:bg-surface-container transition-all">
+                  <button type="button" onClick={() => window.location.reload()} className="flex-1 md:flex-none px-8 py-3 rounded-full border border-outline-variant text-on-surface font-bold hover:bg-surface-container transition-all">
                     Hủy
                   </button>
-                  <button type="submit" className="flex-1 md:flex-none px-10 py-3 rounded-full bg-gradient-to-r from-primary to-primary-container text-white font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
-                    Lưu thay đổi
+                  <button disabled={isSubmitting} type="submit" className="flex-1 md:flex-none px-10 py-3 rounded-full bg-gradient-to-r from-primary to-primary-container text-white font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50">
+                    {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
                   </button>
                 </div>
               </div>

@@ -138,31 +138,36 @@ export default function StoreOrderDetails() {
 
       <div className="bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-surface-container-low mb-8">
         <h2 className="text-lg font-bold text-primary mb-6">Trạng thái đơn hàng</h2>
-        <p className="text-on-surface-variant text-sm mb-4">Hiện tại: {order.status}</p>
+        <p className="text-on-surface-variant text-sm mb-4">
+          Hiện tại: <span className="font-bold">{order.status}</span>
+          {newStatus !== order.status && (
+            <span className="text-tertiary ml-2">→ Thay đổi thành: <span className="font-bold">{newStatus}</span></span>
+          )}
+        </p>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center relative gap-6">
           <div className="flex flex-col items-center relative z-10 bg-surface-container-lowest px-4">
-            <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center mb-2 shadow-sm">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 shadow-sm ${['Mới', 'Đang xử lý', 'Đang giao', 'Đã giao', 'Hoàn thành', 'completed'].includes(newStatus) ? 'bg-primary text-white' : 'bg-surface-container-high text-outline'}`}>
               <Package className="w-5 h-5" />
             </div>
-            <span className="text-sm font-bold text-primary">Đơn hàng</span>
+            <span className={`text-sm font-bold ${['Mới', 'Đang xử lý', 'Đang giao', 'Đã giao', 'Hoàn thành', 'completed'].includes(newStatus) ? 'text-primary' : 'text-outline'}`}>Đơn hàng</span>
           </div>
           <div className="flex flex-col items-center relative z-10 bg-surface-container-lowest px-4">
-            <div className="w-10 h-10 rounded-full bg-tertiary text-white flex items-center justify-center mb-2 shadow-sm">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 shadow-sm ${['Đang xử lý', 'Đang giao', 'Đã giao', 'Hoàn thành', 'completed'].includes(newStatus) ? 'bg-tertiary text-white' : 'bg-surface-container-high text-outline'}`}>
               <AlertCircle className="w-5 h-5" />
             </div>
-            <span className="text-sm font-bold text-tertiary">Xử lý</span>
+            <span className={`text-sm font-bold ${['Đang xử lý', 'Đang giao', 'Đã giao', 'Hoàn thành', 'completed'].includes(newStatus) ? 'text-tertiary' : 'text-outline'}`}>Xử lý</span>
           </div>
           <div className="flex flex-col items-center relative z-10 bg-surface-container-lowest px-4">
-            <div className="w-10 h-10 rounded-full bg-surface-container-high text-outline flex items-center justify-center mb-2">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${['Đang giao', 'Đã giao', 'Hoàn thành', 'completed'].includes(newStatus) ? 'bg-[#f59e0b] text-white shadow-sm' : 'bg-surface-container-high text-outline'}`}>
               <Truck className="w-5 h-5" />
             </div>
-            <span className="text-sm font-bold text-outline">Giao hàng</span>
+            <span className={`text-sm font-bold ${['Đang giao', 'Đã giao', 'Hoàn thành', 'completed'].includes(newStatus) ? 'text-[#f59e0b]' : 'text-outline'}`}>Giao hàng</span>
           </div>
           <div className="flex flex-col items-center relative z-10 bg-surface-container-lowest px-4">
-            <div className="w-10 h-10 rounded-full bg-surface-container-high text-outline flex items-center justify-center mb-2">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${['Đã giao', 'Hoàn thành', 'completed'].includes(newStatus) ? 'bg-[#10b981] text-white shadow-sm' : 'bg-surface-container-high text-outline'}`}>
               <CheckCircle2 className="w-5 h-5" />
             </div>
-            <span className="text-sm font-bold text-outline">Hoàn thành</span>
+            <span className={`text-sm font-bold ${['Đã giao', 'Hoàn thành', 'completed'].includes(newStatus) ? 'text-[#10b981]' : 'text-outline'}`}>Hoàn thành</span>
           </div>
         </div>
       </div>

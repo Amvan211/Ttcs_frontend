@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BookOpen, User, Eye } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
 import { authResponseToUser } from '../../utils/authMap';
@@ -8,6 +8,7 @@ import { authResponseToUser } from '../../utils/authMap';
 export default function Login() {
   const { setSession } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -22,8 +23,10 @@ export default function Login() {
       const auth = await authService.login({ username: username.trim(), password });
       const u = authResponseToUser(auth);
       setSession(auth.token, u);
+      const from = location.state?.from || '/';
+      const singleItem = location.state?.singleItem;
       if (u.role === 'ADMIN') navigate('/admin');
-      else navigate('/');
+      else navigate(from, { replace: true, state: { singleItem } });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Đăng nhập thất bại');
     } finally {

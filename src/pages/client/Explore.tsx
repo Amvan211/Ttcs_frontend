@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import BookCard from '../../components/ui/BookCard';
+import BookReviews from '../../components/ui/BookReviews';
 import { Book } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { bookService, categoryService } from '../../services';
@@ -76,13 +77,19 @@ export default function Explore() {
 
   
   const ALL_CATEGORY: ExploreCategory = useMemo(
-    () => ({
-      id: 'all',
-      label: 'Tất cả',
-      icon: BookOpen,
-      count: `${books.length} Titles`,
-    }),
-    [books.length]
+    () => {
+      const total = apiCategories.reduce((acc, cat) => {
+        const num = parseInt(cat.count.replace(/\D/g, ''), 10);
+        return acc + (isNaN(num) ? 0 : num);
+      }, 0);
+      return {
+        id: 'all',
+        label: 'Tất cả',
+        icon: BookOpen,
+        count: `${total} Titles`,
+      };
+    },
+    [apiCategories]
   );
 
   const displayCategories = [ALL_CATEGORY, ...apiCategories];
@@ -278,17 +285,20 @@ export default function Explore() {
                   <ShoppingCart className="w-5 h-5" />
                   Thêm vào giỏ hàng
                 </button>
-                <Link
-                  to="/checkout"
+                <button
+                  type="button"
                   onClick={() => {
-                    addToCart(selectedBook);
+                    const itemToBuy = selectedBook;
                     setSelectedBook(null);
+                    navigate('/checkout', { state: { singleItem: itemToBuy } });
                   }}
                   className="flex-1 border border-primary text-primary py-4 rounded-full font-bold text-lg hover:bg-primary/5 transition-all flex items-center justify-center"
                 >
                   Đặt hàng ngay
-                </Link>
+                </button>
               </div>
+
+              <BookReviews bookId={selectedBook.id} />
             </div>
           </div>
         </div>

@@ -29,6 +29,7 @@ export default function StoreDashboard() {
     status: 'APPROVED',
     coverImage: '',
     categoryId: 0,
+    description: '',
   });
   const [saveErr, setSaveErr] = useState<string | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -82,8 +83,9 @@ export default function StoreDashboard() {
         price: book.price,
         stock: book.stock || 0,
         status: toApprovalStatus(book.status),
-        coverImage: book.coverImage,
+        coverImage: book.coverImage || '',
         categoryId: defaultCategoryId(),
+        description: book.description || '',
       });
     } else {
       setEditingBook(null);
@@ -95,6 +97,7 @@ export default function StoreDashboard() {
         status: 'APPROVED',
         coverImage: '',
         categoryId: defaultCategoryId(),
+        description: '',
       });
     }
     setIsModalOpen(true);
@@ -126,6 +129,7 @@ export default function StoreDashboard() {
         price: Number(formData.price),
         stockQuantity: Math.max(0, Math.floor(Number(formData.stock))),
         coverImageUrl: formData.coverImage.trim() || undefined,
+        description: formData.description.trim() || undefined,
         approvalStatus: formData.status as 'PENDING' | 'APPROVED' | 'REJECTED',
         categoryId: formData.categoryId,
       };
@@ -155,6 +159,23 @@ export default function StoreDashboard() {
     return matchSearch && matchStatus;
   });
 
+  const [partnerRegData, setPartnerRegData] = useState({ storeName: '', address: '', description: '' });
+  const [regLoading, setRegLoading] = useState(false);
+  const [regSuccess, setRegSuccess] = useState(false);
+
+  const handleRegisterPartner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRegLoading(true);
+    try {
+      await partnerService.registerStore(partnerRegData);
+      setRegSuccess(true);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Đăng ký thất bại');
+    } finally {
+      setRegLoading(false);
+    }
+  };
+
   if (!isLoggedIn) {
     return (
       <div className="pt-32 pb-24 px-8 max-w-7xl mx-auto text-center min-h-[70vh] flex flex-col items-center justify-center">
@@ -168,6 +189,41 @@ export default function StoreDashboard() {
         <Link to="/login" className="inline-flex items-center justify-center px-8 py-3 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
           Đăng nhập ngay
         </Link>
+      </div>
+    );
+  }
+
+  if (user?.role === 'CUSTOMER' || user?.role === 'READER') {
+    return (
+      <div className="pt-32 pb-24 px-8 max-w-2xl mx-auto min-h-[70vh]">
+        <div className="bg-surface-container-low p-8 rounded-2xl shadow-sm border border-outline-variant/30">
+          <h2 className="font-serif text-3xl font-bold text-primary mb-2">Đăng ký đối tác</h2>
+          <p className="text-on-surface-variant mb-8">Trở thành đối tác bán sách để đăng và quản lý sách của bạn trên hệ thống The Archive.</p>
+          {regSuccess ? (
+            <div className="p-4 bg-green-50 text-green-700 rounded-xl border border-green-200">
+              <p className="font-bold mb-1">Đăng ký thành công!</p>
+              <p className="text-sm">Yêu cầu của bạn đã được gửi. Vui lòng đăng xuất và đăng nhập lại sau khi admin phê duyệt để có thể sử dụng gian hàng.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleRegisterPartner} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Tên cửa hàng</label>
+                <input required type="text" value={partnerRegData.storeName} onChange={e => setPartnerRegData({...partnerRegData, storeName: e.target.value})} className="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all" placeholder="Tên gian hàng của bạn" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Địa chỉ</label>
+                <input type="text" value={partnerRegData.address} onChange={e => setPartnerRegData({...partnerRegData, address: e.target.value})} className="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all" placeholder="Địa chỉ liên hệ (không bắt buộc)" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Mô tả gian hàng</label>
+                <textarea rows={3} value={partnerRegData.description} onChange={e => setPartnerRegData({...partnerRegData, description: e.target.value})} className="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all" placeholder="Giới thiệu ngắn về cửa hàng của bạn" />
+              </div>
+              <button type="submit" disabled={regLoading} className="w-full py-4 bg-primary text-white font-bold rounded-xl mt-4 hover:opacity-90 disabled:opacity-50">
+                {regLoading ? 'Đang gửi...' : 'Gửi yêu cầu đăng ký'}
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     );
   }
@@ -197,10 +253,6 @@ export default function StoreDashboard() {
             <div className="text-4xl font-bold font-serif">
               {stats != null ? `${Math.round(stats.totalRevenue).toLocaleString('vi-VN')}đ` : inventoryLoading ? '…' : '—'}
             </div>
-          </div>
-          <div className="mt-6 flex items-center text-sm font-semibold text-tertiary group-hover:text-tertiary-fixed-dim">
-            <TrendingUp className="mr-1 w-4 h-4" />
-            <span>+12% so với tháng trước</span>
           </div>
         </div>
         <div 
@@ -437,6 +489,16 @@ export default function StoreDashboard() {
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Mô tả sách</label>
+                  <textarea 
+                    rows={4}
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                    placeholder="Giới thiệu nội dung sách..."
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
                   <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Ảnh bìa (URL, tùy chọn)</label>
                   <input
                     type="url"
@@ -491,18 +553,6 @@ export default function StoreDashboard() {
                   <span className="font-bold text-primary">
                     {stats != null ? `${Math.round(stats.totalRevenue).toLocaleString('vi-VN')}đ` : '—'}
                   </span>
-                </div>
-                <div className="flex justify-between items-center p-4 bg-surface-container-lowest border border-surface-container-low rounded-xl">
-                  <span className="text-on-surface-variant">Tháng 3, 2026</span>
-                  <span className="font-semibold text-on-surface">114.700.000đ</span>
-                </div>
-                <div className="flex justify-between items-center p-4 bg-surface-container-lowest border border-surface-container-low rounded-xl">
-                  <span className="text-on-surface-variant">Tháng 2, 2026</span>
-                  <span className="font-semibold text-on-surface">98.200.000đ</span>
-                </div>
-                <div className="flex justify-between items-center p-4 bg-surface-container-lowest border border-surface-container-low rounded-xl">
-                  <span className="text-on-surface-variant">Tháng 1, 2026</span>
-                  <span className="font-semibold text-on-surface">105.000.000đ</span>
                 </div>
               </div>
               <div className="mt-6 pt-4 border-t border-surface-container-low">

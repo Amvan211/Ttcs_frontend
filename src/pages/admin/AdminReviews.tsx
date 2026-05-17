@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BarChart, Star, AlertCircle, Filter, MoreVertical } from 'lucide-react';
+import { BarChart, Star, AlertCircle, Filter, MoreVertical, Trash2 } from 'lucide-react';
 
 import { reviewService } from '../../services';
 import type { AdminReviewRow } from '../../types/admin';
@@ -25,6 +25,17 @@ export default function AdminReviews() {
       cancelled = true;
     };
   }, []);
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa đánh giá này?')) return;
+    try {
+      const reviewId = Number(String(id).replace(/\D/g, ''));
+      await reviewService.deleteAdminReview(reviewId);
+      setReviews((prev) => prev.filter((r) => r.id !== id));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Xóa đánh giá thất bại');
+    }
+  };
 
   const avg =
     reviews.length > 0 ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : '—';
@@ -154,18 +165,14 @@ export default function AdminReviews() {
                     </td>
                     <td className="px-6 py-4 text-xs text-slate-500">{review.date}</td>
                     <td className="px-6 py-4 text-right">
-                      {review.status === 'flagged' ? (
-                        <button
-                          type="button"
-                          className="px-3 py-1 bg-red-50 text-red-600 text-xs font-bold rounded-full border border-red-100 hover:bg-red-100 transition-colors"
-                        >
-                          Review
-                        </button>
-                      ) : (
-                        <button type="button" className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-400">
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button 
+                        type="button" 
+                        onClick={() => handleDelete(review.id)}
+                        className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
+                        title="Xóa đánh giá"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))

@@ -21,6 +21,8 @@ export const bookService = {
 
   getBookDetail: (id: number) => apiClient.get<ApiBookDetail>(`/api/books/${id}`),
 
+  getRecommendations: () => apiClient.get<ApiBook[]>('/api/recommendations'),
+
   getAdminBooks: () => apiClient.get<ApiBook[]>('/api/admin/books'),
   getPendingBooks: () => apiClient.get<ApiBook[]>('/api/admin/books/pending'),
   createAdminBook: (payload: AdminBookPayload) => apiClient.post<ApiBook>('/api/admin/books', payload),

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { categoryService } from '../../services';
-import type { ApiCategory } from '../../types/api';
+import { categoryService, bookService } from '../../services';
+import type { ApiCategory, ApiBook } from '../../types/api';
+import BookCard from '../../components/ui/BookCard';
+import { useAuth } from '../../context/AuthContext';
 
 const CATEGORY_IMAGES = [
   'https://lh3.googleusercontent.com/aida-public/AB6AXuBzVeCeoneS95w1y7jHbGGEJCzbqWCcS1qzBhqpYBn5idFxMfqzA35ozgnqdl6nXa7hwZ-fz_ixsq63A3eC_rFx5wrhdI80nDOWfp_BCabRdpYq4DTW8L8u3dkQXcu3MRcnW9AnrSJlDcoHyw72q0MkIArDSRGOY8HaBR8oMzZhFO2jhJhG9Sgveu0QS9PTIslhHeCunPxXR7YIx9us6pf2hNfRUDc-6QgfgYMIg-IaAa9sGhtlGEoeEzE7Clyr9OsdBP1omoyN7bk',
@@ -11,6 +13,8 @@ const CATEGORY_IMAGES = [
 
 export default function Home() {
   const [categories, setCategories] = useState<ApiCategory[]>([]);
+  const [recommendations, setRecommendations] = useState<ApiBook[]>([]);
+  const { isLoggedIn } = useAuth();
 
   useEffect(() => {
     let cancelled = false;
@@ -22,10 +26,22 @@ export default function Home() {
         if (!cancelled) setCategories([]);
       }
     })();
+    
+    if (isLoggedIn) {
+      (async () => {
+        try {
+          const recData = await bookService.getRecommendations();
+          if (!cancelled) setRecommendations(recData);
+        } catch {
+          if (!cancelled) setRecommendations([]);
+        }
+      })();
+    }
+    
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isLoggedIn]);
 
   const selectedCategories = useMemo(() => categories.slice(0, 3), [categories]);
 
@@ -54,9 +70,9 @@ export default function Home() {
               <Link to="/explore" className="bg-tertiary-fixed text-on-tertiary-fixed px-10 py-4 rounded-full font-bold text-lg hover:opacity-90 transition-all shadow-xl inline-block">
                 Bắt đầu khám phá
               </Link>
-              <button className="bg-white/10 backdrop-blur-md text-white px-10 py-4 rounded-full font-bold text-lg border border-white/20 hover:bg-white/20 transition-all">
+              <Link to="/cart" className="bg-white/10 backdrop-blur-md text-white px-10 py-4 rounded-full font-bold text-lg border border-white/20 hover:bg-white/20 transition-all">
                 Bộ sưu tập
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -102,6 +118,26 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {/* Recommendations Section */}
+      {isLoggedIn && recommendations.length > 0 && (
+        <section className="px-8 max-w-screen-2xl mx-auto mb-24">
+          <div className="flex items-end justify-between mb-12">
+            <div>
+              <h2 className="font-serif text-5xl font-black text-primary tracking-tighter">Đề xuất cho bạn</h2>
+              <p className="text-outline mt-2 text-lg">Dựa trên sở thích và hành vi của bạn.</p>
+            </div>
+            <Link to="/explore" className="text-primary font-bold uppercase tracking-widest text-sm hover:text-primary-container transition-colors">
+              Xem tất cả
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {recommendations.slice(0, 5).map((book) => (
+              <BookCard key={book.id} book={book} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

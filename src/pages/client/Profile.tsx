@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { orderService } from '../../services';
 import type { ApiOrder } from '../../types/api';
 import { formatOrderDate } from '../../utils/formatDate';
+import BookReviews from '../../components/ui/BookReviews';
 
 const PLACEHOLDER_COVER =
   'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=200&h=280';
@@ -31,6 +32,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<ApiOrder | null>(null);
+  const [reviewingBookId, setReviewingBookId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -116,6 +118,15 @@ export default function Profile() {
                 <span className="font-medium text-on-surface-variant group-hover:text-primary">Phương thức thanh toán</span>
                 <ChevronRight className="w-5 h-5 text-outline group-hover:translate-x-1 transition-transform" />
               </Link>
+              {user?.role === 'CUSTOMER' && (
+                <Link
+                  to="/partner/register"
+                  className="flex items-center justify-between p-4 rounded-lg hover:bg-surface-container-highest transition-all group"
+                >
+                  <span className="font-medium text-on-surface-variant group-hover:text-primary">Đăng ký bán hàng</span>
+                  <ChevronRight className="w-5 h-5 text-outline group-hover:translate-x-1 transition-transform" />
+                </Link>
+              )}
             </nav>
           </div>
         </aside>
@@ -176,7 +187,15 @@ export default function Profile() {
                           </td>
                           <td className="px-6 py-6 text-on-surface-variant font-medium">{order.date}</td>
                           <td className="px-6 py-6">
-                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-xs font-bold uppercase tracking-wider">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                              ['completed', 'Đã giao', 'Hoàn thành'].includes(order.status)
+                                ? 'bg-green-100 text-green-800'
+                                : ['processing', 'Đang xử lý', 'Đang giao'].includes(order.status)
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : ['Mới', 'new'].includes(order.status)
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : 'bg-red-100 text-red-800'
+                            }`}>
                               {order.status}
                             </span>
                           </td>
@@ -237,7 +256,7 @@ export default function Profile() {
           <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 md:p-8">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-serif text-2xl font-bold">Chi tiết đơn hàng #{selectedOrder.id}</h3>
-              <button type="button" className="text-sm font-semibold text-primary" onClick={() => setSelectedOrder(null)}>
+              <button type="button" className="text-sm font-semibold text-primary" onClick={() => { setSelectedOrder(null); setReviewingBookId(null); }}>
                 Đóng
               </button>
             </div>
@@ -246,12 +265,30 @@ export default function Profile() {
             </p>
             <div className="space-y-3">
               {(selectedOrder.items ?? []).map((line) => (
-                <div key={`${line.bookId}-${line.quantity}`} className="p-4 rounded-xl bg-surface-container-low flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-semibold">{line.bookTitle}</p>
-                    <p className="text-sm text-on-surface-variant">SL: {line.quantity}</p>
+                <div key={`${line.bookId}-${line.quantity}`} className="p-4 rounded-xl bg-surface-container-low flex flex-col gap-4">
+                  <div className="flex items-center justify-between w-full">
+                    <div>
+                      <p className="font-semibold">{line.bookTitle}</p>
+                      <p className="text-sm text-on-surface-variant">SL: {line.quantity}</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <p className="font-bold">{(line.lineTotal ?? line.unitPrice * line.quantity).toLocaleString('vi-VN')}đ</p>
+                      {['completed', 'Đã giao', 'Hoàn thành', 'hoàn tất', 'delivered'].includes(selectedOrder.status ?? '') && (
+                        <button
+                          type="button"
+                          onClick={() => setReviewingBookId(reviewingBookId === line.bookId ? null : line.bookId)}
+                          className="px-3 py-1.5 text-xs font-bold rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors"
+                        >
+                          {reviewingBookId === line.bookId ? 'Đóng đánh giá' : 'Đánh giá'}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <p className="font-bold">{(line.lineTotal ?? line.unitPrice * line.quantity).toLocaleString('vi-VN')}đ</p>
+                  {reviewingBookId === line.bookId && (
+                    <div className="border-t border-outline-variant/30 pt-4 mt-2">
+                      <BookReviews bookId={line.bookId.toString()} />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

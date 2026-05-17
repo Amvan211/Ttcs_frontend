@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Filter, Download, Plus, Edit3, Trash2, Library, TrendingUp, Layers, Activity, Sparkles, BookOpen } from 'lucide-react';
+import { Filter, Download, Plus, Edit3, Trash2, Library, TrendingUp, Layers, Activity, Sparkles, BookOpen, X } from 'lucide-react';
 
 import { categoryService } from '../../services';
 import type { ApiCategory } from '../../types/api';
@@ -8,22 +8,25 @@ export default function AdminCategories() {
   const [categories, setCategories] = useState<ApiCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formData, setFormData] = useState({ name: '' });
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const list = await categoryService.getAdminCategories();
+      setCategories(list);
+      setErr(null);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Không tải được danh mục');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const list = await categoryService.getAdminCategories();
-        if (!cancelled) setCategories(list);
-      } catch (e) {
-        if (!cancelled) setErr(e instanceof Error ? e.message : 'Không tải được danh mục');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    loadData();
   }, []);
 
   const totalBooksHint = categories.reduce((s, c) => {
@@ -32,26 +35,33 @@ export default function AdminCategories() {
   }, 0);
 
   const handleCreate = () => {
-    const run = async () => {
-      const label = window.prompt('Nhập tên danh mục mới');
-      if (!label?.trim()) return;
-      const created = await categoryService.createAdminCategory({ name: label.trim() });
-      setCategories((prev) => [created, ...prev]);
-    };
-    run().catch((e) => setErr(e instanceof Error ? e.message : 'Tạo danh mục thất bại'));
+    setEditingId(null);
+    setFormData({ name: '' });
+    setIsModalOpen(true);
   };
 
   const handleEdit = (id: string) => {
-    const run = async () => {
-      const current = categories.find((c) => c.id === id);
-      if (!current) return;
-      const nextLabel = window.prompt('Sửa tên danh mục', current.label);
-      if (!nextLabel?.trim()) return;
-      const categoryId = current.categoryId ?? Number(current.id);
-      const updated = await categoryService.updateAdminCategory(categoryId, { name: nextLabel.trim() });
-      setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)));
-    };
-    run().catch((e) => setErr(e instanceof Error ? e.message : 'Cập nhật danh mục thất bại'));
+    const current = categories.find((c) => c.id === id);
+    if (!current) return;
+    setEditingId(current.categoryId ?? Number(current.id));
+    setFormData({ name: current.label });
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) return;
+    try {
+      if (editingId) {
+        await categoryService.updateAdminCategory(editingId, { name: formData.name.trim() });
+      } else {
+        await categoryService.createAdminCategory({ name: formData.name.trim() });
+      }
+      setIsModalOpen(false);
+      await loadData();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Lưu danh mục thất bại');
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -61,7 +71,7 @@ export default function AdminCategories() {
       if (!current) return;
       const categoryId = current.categoryId ?? Number(current.id);
       await categoryService.deleteAdminCategory(categoryId);
-      setCategories((prev) => prev.filter((c) => c.id !== id));
+      await loadData();
     };
     run().catch((e) => setErr(e instanceof Error ? e.message : 'Xóa danh mục thất bại'));
   };
@@ -232,6 +242,54 @@ export default function AdminCategories() {
           </div>
         </div>
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h2 className="text-xl font-serif font-bold text-[#1e1b4b]">
+                {editingId ? 'Sửa danh mục' : 'Thêm danh mục mới'}
+              </h2>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <form id="category-form" onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Tên danh mục *</label>
+                  <input 
+                    required 
+                    type="text" 
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] outline-none transition-all" 
+                    placeholder="Nhập tên danh mục..."
+                  />
+                </div>
+              </form>
+            </div>
+            
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+              <button 
+                type="button" 
+                onClick={() => setIsModalOpen(false)}
+                className="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition-colors"
+              >
+                Hủy
+              </button>
+              <button 
+                type="submit" 
+                form="category-form"
+                className="px-6 py-2.5 bg-[#1e1b4b] text-white rounded-xl text-sm font-bold hover:bg-[#312e81] transition-colors shadow-lg"
+              >
+                Lưu thay đổi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

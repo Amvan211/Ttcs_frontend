@@ -30,6 +30,9 @@ import AdminCategories from './pages/admin/AdminCategories';
 import StoreOrders from './pages/client/StoreOrders';
 import StoreOrderDetails from './pages/client/StoreOrderDetails';
 import Checkout from './pages/client/Checkout';
+import PartnerRegister from './pages/client/PartnerRegister';
+
+import { ChatWidget } from './components/ChatWidget';
 
 export default function App() {
   return (
@@ -58,6 +61,7 @@ export default function App() {
               <Route path="explore" element={<Explore />} />
               <Route path="cart" element={<Cart />} />
               <Route path="checkout" element={<Checkout />} />
+              <Route path="partner/register" element={<PartnerRegister />} />
               <Route path="store" element={<StoreDashboard />} />
               <Route path="store/orders" element={<StoreOrders />} />
               <Route path="store/orders/:id" element={<StoreOrderDetails />} />
@@ -75,6 +79,7 @@ export default function App() {
             } />
 
           </Routes>
+          <ChatWidget />
         </Router>
       </CartProvider>
     </AuthProvider>

@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import type { Book } from '../../types';
 import { ArrowLeft, MapPin, CreditCard, Truck, Wallet, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import { orderService } from '../../services';
+import { orderService, voucherService } from '../../services';
+import type { ApiVoucher } from '../../types/voucher';
 
 const SHIPPING_FEE = 30000;
 
@@ -11,6 +13,15 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { isLoggedIn, user } = useAuth();
   const { cartItems, clearCart } = useCart();
+  const location = useLocation();
+  const singleItem = location.state?.singleItem as Book | undefined;
+
+  const checkoutItems = useMemo(() => {
+    if (singleItem) {
+      return [{ book: singleItem, quantity: 1 }];
+    }
+    return cartItems;
+  }, [singleItem, cartItems]);
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -22,8 +33,18 @@ export default function Checkout() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState<number | null>(null);
 
+  const [availableVouchers, setAvailableVouchers] = useState<ApiVoucher[]>([]);
+  const [selectedVoucherId, setSelectedVoucherId] = useState<number | ''>('');
+  const [manualVoucherCode, setManualVoucherCode] = useState('');
+
   useEffect(() => {
-    if (!isLoggedIn) navigate('/login', { replace: true, state: { from: '/checkout' } });
+    if (!isLoggedIn) {
+      navigate('/login', { replace: true, state: { from: '/checkout', singleItem: location.state?.singleItem } });
+    } else {
+      voucherService.getMyVouchers()
+        .then(setAvailableVouchers)
+        .catch(console.error);
+    }
   }, [isLoggedIn, navigate]);
 
   useEffect(() => {
@@ -31,10 +52,25 @@ export default function Checkout() {
   }, [user?.name]);
 
   const subtotal = useMemo(
-    () => cartItems.reduce((sum, { book, quantity }) => sum + book.price * quantity, 0),
-    [cartItems]
+    () => checkoutItems.reduce((sum, { book, quantity }) => sum + book.price * quantity, 0),
+    [checkoutItems]
   );
-  const totalWithShipping = subtotal + SHIPPING_FEE;
+
+  const discountAmount = useMemo(() => {
+    if (!selectedVoucherId) return 0;
+    const v = availableVouchers.find((v) => v.id === selectedVoucherId);
+    if (!v) return 0;
+    if (v.minOrderValue && subtotal < v.minOrderValue) return 0;
+    
+    if (v.discountType === 'PERCENTAGE') {
+      let d = subtotal * (v.discountValue / 100);
+      if (v.maxDiscountAmount && d > v.maxDiscountAmount) d = v.maxDiscountAmount;
+      return d;
+    }
+    return v.discountValue;
+  }, [selectedVoucherId, availableVouchers, subtotal]);
+
+  const totalWithShipping = subtotal + SHIPPING_FEE - discountAmount;
   const momoTransferContent = `THEARCHIVE-${Date.now()}`;
   const momoQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(
     `MOMO|amount=${totalWithShipping}|content=${momoTransferContent}|merchant=THE_ARCHIVE`
@@ -42,7 +78,7 @@ export default function Checkout() {
 
   if (!isLoggedIn) return null;
 
-  if (cartItems.length === 0 && !isSuccess) {
+  if (checkoutItems.length === 0 && !isSuccess) {
     return (
       <div className="pt-32 pb-24 px-8 max-w-3xl mx-auto text-center min-h-[70vh] flex flex-col items-center justify-center">
         <p className="text-on-surface-variant mb-6">Giỏ hàng của bạn đang trống.</p>
@@ -73,13 +109,17 @@ export default function Checkout() {
 
       const order = await orderService.createOrder({
         note: shippingBlock,
-        items: cartItems.map(({ book, quantity }) => ({
+        items: checkoutItems.map(({ book, quantity }) => ({
           bookId: Number(book.id),
           quantity,
         })),
+        voucherId: selectedVoucherId ? Number(selectedVoucherId) : undefined,
+        voucherCode: manualVoucherCode.trim() || undefined,
       });
       setPlacedOrderId(order.id);
-      clearCart();
+      if (!singleItem) {
+        clearCart();
+      }
       setIsSuccess(true);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Đặt hàng thất bại');
@@ -117,7 +157,7 @@ export default function Checkout() {
     );
   }
 
-  const itemCount = cartItems.reduce((n, { quantity }) => n + quantity, 0);
+  const itemCount = checkoutItems.reduce((n, { quantity }) => n + quantity, 0);
 
   return (
     <div className="pt-12 pb-24 px-8 max-w-7xl mx-auto">
@@ -283,7 +323,7 @@ export default function Checkout() {
             <h2 className="font-serif text-2xl font-bold text-primary mb-6 pb-4 border-b border-outline-variant/30">Đơn hàng của bạn</h2>
 
             <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto pr-2">
-              {cartItems.map(({ book, quantity }) => (
+              {checkoutItems.map(({ book, quantity }) => (
                 <div key={book.id} className="flex gap-4">
                   <div className="w-16 h-20 bg-surface-container rounded overflow-hidden flex-shrink-0">
                     {book.coverImage ? (
@@ -310,12 +350,52 @@ export default function Checkout() {
                 <span>Phí vận chuyển (ước tính)</span>
                 <span className="font-bold text-on-surface">{SHIPPING_FEE.toLocaleString('vi-VN')}đ</span>
               </div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-sm text-green-600 font-medium">
+                  <span>Giảm giá (Voucher)</span>
+                  <span>-{discountAmount.toLocaleString('vi-VN')}đ</span>
+                </div>
+              )}
               <p className="text-xs text-on-surface-variant">
                 Tổng tiền sách được hệ thống ghi nhận theo giá niêm yết; phí ship có thể thu khi giao hàng theo chính sách hiện hành.
               </p>
             </div>
 
-            <div className="pt-6 border-t border-outline-variant/30 mb-8">
+            <div className="pt-4 pb-6 border-b border-outline-variant/30 mb-6 space-y-4">
+              <h3 className="font-bold text-sm text-primary uppercase tracking-wider">Mã giảm giá</h3>
+              {availableVouchers.length > 0 && (
+                <select
+                  value={selectedVoucherId}
+                  onChange={(e) => {
+                    setSelectedVoucherId(e.target.value === '' ? '' : Number(e.target.value));
+                    setManualVoucherCode('');
+                  }}
+                  className="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
+                >
+                  <option value="">-- Chọn voucher của bạn --</option>
+                  {availableVouchers.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.code} - {v.description || (v.discountType === 'FIXED_AMOUNT' ? `Giảm ${v.discountValue.toLocaleString()}đ` : `Giảm ${v.discountValue}%`)}
+                    </option>
+                  ))}
+                </select>
+              )}
+              
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  placeholder="Hoặc nhập mã voucher..." 
+                  value={manualVoucherCode}
+                  onChange={(e) => {
+                    setManualVoucherCode(e.target.value);
+                    if (e.target.value) setSelectedVoucherId('');
+                  }}
+                  className="flex-1 px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm uppercase"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-outline-variant/30 mb-8">
               <div className="flex justify-between items-baseline">
                 <span className="font-serif text-lg font-bold">Tổng (ước tính)</span>
                 <div className="text-right">

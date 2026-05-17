@@ -7,3 +7,4 @@ export * from './partnerService';
 export * from './reviewService';
 export * from './userService';
 export * from './statsService';
+export * from './voucherService';
