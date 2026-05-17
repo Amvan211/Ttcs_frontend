@@ -42,6 +42,13 @@ export default function Explore() {
   }, [initialCategory]);
 
   useEffect(() => {
+    if (selectedBook) {
+      // Trigger API to record 'VIEW' behavior
+      bookService.getBookDetail(selectedBook.id).catch(() => {});
+    }
+  }, [selectedBook]);
+
+  useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
